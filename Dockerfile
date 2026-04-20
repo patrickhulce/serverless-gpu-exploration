@@ -1,9 +1,6 @@
-# Default Dockerfile — identical to Dockerfile.live. RunPod's Hub
-# validator expects a file literally named `Dockerfile` at the repo
-# root. For the 4 LTX-2 variants this same base image is used; the
-# storage strategy is picked at runtime via MODEL_SOURCE / MODEL_PATH
-# env. The bake variant has its own Dockerfile.bake; diagnostics has
-# Dockerfile.diag.
+# LTX-2 with the --pipeline-only weight set baked into the image at
+# /opt/models/ltx-2. Image will be ~45 GB; container disk on the
+# endpoint must be >=60 GB.
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -27,15 +24,30 @@ RUN pip install --no-cache-dir \
       "hf-transfer>=0.1.8,<1.0" \
       "runpod>=1.7,<2.0"
 
+ARG LTX2_REPO=Lightricks/LTX-2
+ENV HF_HUB_ENABLE_HF_TRANSFER=1
+RUN python -c "from huggingface_hub import snapshot_download; \
+      snapshot_download( \
+        repo_id='${LTX2_REPO}', \
+        local_dir='/opt/models/ltx-2', \
+        max_workers=16, \
+        allow_patterns=[ \
+          'model_index.json','*.json','LICENSE','README.md', \
+          'scheduler/*','tokenizer/*','text_encoder/*', \
+          'transformer/*','vae/*','audio_vae/*', \
+          'connectors/*','vocoder/*', \
+        ], \
+      )"
+
 WORKDIR /app
 COPY app.py /app/app.py
 COPY diagnostics.py /app/diagnostics.py
 COPY handler.py /app/handler.py
 
-# WORKER_ROLE=ltx2 (default) -> app.handler; WORKER_ROLE=diag -> diagnostics.handler.
-# MODEL_SOURCE/MODEL_PATH only matter for ltx2 role.
 ENV WORKER_ROLE=ltx2 \
-    MODEL_SOURCE=live \
-    MODEL_PATH=Lightricks/LTX-2
+    MODEL_SOURCE=bake \
+    MODEL_PATH=/opt/models/ltx-2 \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
 
 CMD ["python", "-u", "handler.py"]

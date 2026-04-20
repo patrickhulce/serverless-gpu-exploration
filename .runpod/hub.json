@@ -1,11 +1,11 @@
 {
-  "title": "LTX-2 serverless evaluation",
+  "title": "LTX-2 serverless evaluation (bake variant)",
   "description": "Internal benchmark harness: 4 LTX-2 storage variants (bake/live/cache/volume) + a diagnostics endpoint for cold-start and GPU microbenchmarking on RunPod Serverless.",
   "type": "serverless",
   "category": "video",
   "config": {
     "runsOn": "GPU",
-    "containerDiskInGb": 40,
+    "containerDiskInGb": 120,
     "gpuCount": 1,
     "gpuIds": "AMPERE_80",
     "allowedCudaVersions": [
@@ -21,69 +21,35 @@
         "input": {
           "name": "Worker role",
           "type": "string",
-          "description": "ltx2 = LTX-2 inference (uses MODEL_SOURCE); diag = diagnostics/microbench endpoint.",
           "options": [
             {
-              "label": "LTX-2 inference",
+              "label": "LTX-2",
               "value": "ltx2"
-            },
-            {
-              "label": "Diagnostics",
-              "value": "diag"
             }
           ],
-          "default": "diag"
+          "default": "ltx2"
         }
       },
       {
         "key": "MODEL_SOURCE",
         "input": {
-          "name": "Model source (ltx2 role only)",
+          "name": "Model source",
           "type": "string",
-          "description": "bake (image), live (HF), cache (RunPod Model Caching), volume (self-seeded net volume). Ignored for diag role.",
           "options": [
             {
-              "label": "Bake into image",
+              "label": "Bake",
               "value": "bake"
-            },
-            {
-              "label": "Live HF download",
-              "value": "live"
-            },
-            {
-              "label": "RunPod model cache",
-              "value": "cache"
-            },
-            {
-              "label": "Network volume",
-              "value": "volume"
-            },
-            {
-              "label": "N/A (diag)",
-              "value": "diag"
             }
           ],
-          "default": "diag"
+          "default": "bake"
         }
       },
       {
         "key": "MODEL_PATH",
         "input": {
-          "name": "Model path (ltx2 role only)",
+          "name": "Model path",
           "type": "string",
-          "description": "HF repo id, /opt/models/ltx-2 (bake), /runpod-volume/ltx-2 (volume), or 'auto' (cache).",
-          "default": "Lightricks/LTX-2",
-          "advanced": false
-        }
-      },
-      {
-        "key": "HF_TOKEN",
-        "input": {
-          "name": "HuggingFace token",
-          "type": "string",
-          "description": "Needed for the 'live' variant (LTX-2 is gated).",
-          "default": "",
-          "advanced": true
+          "default": "/opt/models/ltx-2"
         }
       }
     ]
