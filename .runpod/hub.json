@@ -1,0 +1,51 @@
+{
+  "title": "LTX-2 serverless evaluation",
+  "description": "Internal benchmark harness: 4 LTX-2 storage variants (bake/live/cache/volume) + a diagnostics endpoint for cold-start and GPU microbenchmarking on RunPod Serverless.",
+  "type": "serverless",
+  "category": "video",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 40,
+    "gpuCount": 1,
+    "gpuIds": "NVIDIA H100 80GB HBM3",
+    "allowedCudaVersions": ["12.8", "12.7", "12.6", "12.5", "12.4"],
+    "env": [
+      {
+        "key": "MODEL_SOURCE",
+        "input": {
+          "name": "Model source",
+          "type": "string",
+          "description": "bake (image), live (HF), cache (RunPod Model Caching), volume (self-seeded net volume). The diagnostics endpoint ignores this.",
+          "options": [
+            {"label": "Bake into image", "value": "bake"},
+            {"label": "Live HF download", "value": "live"},
+            {"label": "RunPod model cache", "value": "cache"},
+            {"label": "Network volume", "value": "volume"},
+            {"label": "Diag (ignored)", "value": "diag"}
+          ],
+          "default": "live"
+        }
+      },
+      {
+        "key": "MODEL_PATH",
+        "input": {
+          "name": "Model path",
+          "type": "string",
+          "description": "HF repo id, /opt/models/ltx-2 (bake), /runpod-volume/ltx-2 (volume), or 'auto' (cache).",
+          "default": "Lightricks/LTX-2",
+          "advanced": false
+        }
+      },
+      {
+        "key": "HF_TOKEN",
+        "input": {
+          "name": "HuggingFace token",
+          "type": "string",
+          "description": "Only needed for the 'live' variant to avoid rate limits.",
+          "default": "",
+          "advanced": true
+        }
+      }
+    ]
+  }
+}
