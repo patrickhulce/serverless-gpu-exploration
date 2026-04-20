@@ -28,9 +28,13 @@ RUN pip install --no-cache-dir \
 
 WORKDIR /app
 COPY app.py /app/app.py
+COPY diagnostics.py /app/diagnostics.py
 COPY handler.py /app/handler.py
 
-ENV MODEL_SOURCE=live \
+# WORKER_ROLE=ltx2 (default) -> app.handler; WORKER_ROLE=diag -> diagnostics.handler.
+# MODEL_SOURCE/MODEL_PATH only matter for ltx2 role.
+ENV WORKER_ROLE=ltx2 \
+    MODEL_SOURCE=live \
     MODEL_PATH=Lightricks/LTX-2
 
 CMD ["python", "-u", "handler.py"]
