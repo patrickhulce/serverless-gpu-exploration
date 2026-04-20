@@ -2,13 +2,21 @@
   "tests": [
     {
       "name": "handler_info",
-      "input": {"op": "info"},
+      "input": {
+        "op": "info"
+      },
       "timeout": 60000
     }
   ],
   "config": {
-    "gpuTypeId": "NVIDIA H100 80GB HBM3",
     "gpuCount": 1,
-    "allowedCudaVersions": ["12.8", "12.7", "12.6", "12.5", "12.4"]
+    "allowedCudaVersions": [
+      "12.8",
+      "12.7",
+      "12.6",
+      "12.5",
+      "12.4"
+    ],
+    "gpuIds": "AMPERE_80"
   }
 }

@@ -7,8 +7,14 @@
     "runsOn": "GPU",
     "containerDiskInGb": 40,
     "gpuCount": 1,
-    "gpuIds": "NVIDIA H100 80GB HBM3",
-    "allowedCudaVersions": ["12.8", "12.7", "12.6", "12.5", "12.4"],
+    "gpuIds": "AMPERE_80",
+    "allowedCudaVersions": [
+      "12.8",
+      "12.7",
+      "12.6",
+      "12.5",
+      "12.4"
+    ],
     "env": [
       {
         "key": "WORKER_ROLE",
@@ -17,8 +23,14 @@
           "type": "string",
           "description": "ltx2 = LTX-2 inference (uses MODEL_SOURCE); diag = diagnostics/microbench endpoint.",
           "options": [
-            {"label": "LTX-2 inference", "value": "ltx2"},
-            {"label": "Diagnostics", "value": "diag"}
+            {
+              "label": "LTX-2 inference",
+              "value": "ltx2"
+            },
+            {
+              "label": "Diagnostics",
+              "value": "diag"
+            }
           ],
           "default": "diag"
         }
@@ -30,11 +42,26 @@
           "type": "string",
           "description": "bake (image), live (HF), cache (RunPod Model Caching), volume (self-seeded net volume). Ignored for diag role.",
           "options": [
-            {"label": "Bake into image", "value": "bake"},
-            {"label": "Live HF download", "value": "live"},
-            {"label": "RunPod model cache", "value": "cache"},
-            {"label": "Network volume", "value": "volume"},
-            {"label": "N/A (diag)", "value": "diag"}
+            {
+              "label": "Bake into image",
+              "value": "bake"
+            },
+            {
+              "label": "Live HF download",
+              "value": "live"
+            },
+            {
+              "label": "RunPod model cache",
+              "value": "cache"
+            },
+            {
+              "label": "Network volume",
+              "value": "volume"
+            },
+            {
+              "label": "N/A (diag)",
+              "value": "diag"
+            }
           ],
           "default": "diag"
         }
