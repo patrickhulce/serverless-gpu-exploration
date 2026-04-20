@@ -24,6 +24,7 @@ RUN pip install --no-cache-dir \
       "sentencepiece==0.2.0" \
       "imageio-ffmpeg==0.5.1" \
       "huggingface-hub>=0.34,<1.0" \
+      "hf-transfer>=0.1.8,<1.0" \
       "runpod>=1.7,<2.0"
 
 WORKDIR /app
