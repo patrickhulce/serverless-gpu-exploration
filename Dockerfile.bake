@@ -1,33 +1,33 @@
-# LTX-2 image with the --pipeline-only weight set baked into the image
-# at /opt/models/ltx-2. Cold-start wall should be pure (image pull +
-# torch import + to(cuda)), no HF download, no volume read. Image is
-# ~95 GB so container disk must be raised to >=100 GB on the endpoint.
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+# LTX-2 with the --pipeline-only weight set baked into the image at
+# /opt/models/ltx-2. Image will be ~45 GB; container disk on the
+# endpoint must be >=60 GB.
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 \
-      python3-pip \
       git \
       ffmpeg \
       curl \
       ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-COPY requirements.txt /tmp/requirements.txt
-RUN python3 -m pip install --upgrade pip \
- && python3 -m pip install -r /tmp/requirements.txt
+RUN pip install --no-cache-dir \
+      "diffusers==0.37.1" \
+      "transformers>=4.52,<5.0" \
+      "accelerate==1.1.1" \
+      "sentencepiece==0.2.0" \
+      "imageio-ffmpeg==0.5.1" \
+      "huggingface-hub>=0.34,<1.0" \
+      "runpod>=1.7,<2.0"
 
 ARG LTX2_REPO=Lightricks/LTX-2
 RUN --mount=type=secret,id=HF_TOKEN \
     HF_TOKEN=$(cat /run/secrets/HF_TOKEN 2>/dev/null || echo "") && \
     if [ -n "$HF_TOKEN" ]; then export HF_TOKEN; fi && \
-    python3 -c "import os; from huggingface_hub import snapshot_download; \
+    python -c "import os; from huggingface_hub import snapshot_download; \
       snapshot_download( \
         repo_id='${LTX2_REPO}', \
         local_dir='/opt/models/ltx-2', \
@@ -40,6 +40,7 @@ RUN --mount=type=secret,id=HF_TOKEN \
         ], \
       )"
 
+WORKDIR /app
 COPY app.py /app/app.py
 
 ENV MODEL_SOURCE=bake \
@@ -47,4 +48,4 @@ ENV MODEL_SOURCE=bake \
     HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1
 
-CMD ["python3", "-u", "app.py"]
+CMD ["python", "-u", "app.py"]

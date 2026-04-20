@@ -1,28 +1,24 @@
-# Tiny diagnostics image for the RunPod serverless eval. cu124 base +
-# torch + runpod-sdk; no diffusers/transformers. Used for Phase 1
-# (probe markers) and Phase 2 (GPU microbench), so its cold-start wall
-# reflects pure RunPod scheduling + image pull, not model load.
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+# Diagnostics image: cu124 + torch (pre-installed) + runpod SDK. The
+# official pytorch/pytorch image already has torch 2.5.1+cu124 baked
+# in, so this avoids the ~45 minute pypi wheel pull we hit from this
+# laptop. Final image is ~7 GB but every layer is cached by Docker
+# Hub's CDN.
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 \
-      python3-pip \
       curl \
       ca-certificates \
       procps \
       mount \
  && rm -rf /var/lib/apt/lists/*
 
+RUN pip install --no-cache-dir "runpod>=1.7,<2.0"
+
 WORKDIR /app
-
-COPY requirements.diag.txt /tmp/requirements.diag.txt
-RUN python3 -m pip install --upgrade pip \
- && python3 -m pip install -r /tmp/requirements.diag.txt
-
 COPY diagnostics.py /app/diagnostics.py
 
-CMD ["python3", "-u", "diagnostics.py"]
+CMD ["python", "-u", "diagnostics.py"]

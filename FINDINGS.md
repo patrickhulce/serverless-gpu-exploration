@@ -1,17 +1,21 @@
 # RunPod LTX-2 benchmark findings
 
 > **Status: partial.** The code harness is complete and reproducible via
-> `create_endpoints.sh` + `benchmark.py`, but no on-cloud measurements
-> have been captured yet. Rows below are placeholders marked **TBM**
-> ("to be measured") until the Phase 1-4 runs are driven on a RunPod
-> account with capacity and a connected GitHub/Hub repo. See
-> `README.md` and the top-level plan for execution steps.
+> `benchmark.py` + `drive_diagnostics.sh` + `seed_volume.py`, but no
+> on-cloud measurements have been captured yet. Rows below are
+> placeholders marked **TBM** ("to be measured") until the Phase 1-4
+> runs are driven on a RunPod account with capacity and a connected
+> GitHub app. See `README.md` and the top-level plan for execution
+> steps.
 
 Raw observations from `exploration/runpod/` on `patrickhulce/serverless-gpu-exploration`
-(auth=private, GPU-H100 HBM3 80 GB, `idleTimeout=5 s`, `flashboot=false`,
-`Dockerfile.{live,bake,diag}` = `nvidia/cuda:12.4.1-runtime-ubuntu22.04`
-+ `python3` system + `requirements.txt`). Model = `Lightricks/LTX-2`
-via `diffusers.LTX2Pipeline` in bf16, VAE tiling enabled.
+(auth=public, GPU-H100 HBM3 80 GB, `idleTimeout=5 s`, `flashboot=false`,
+`Dockerfile.{live,bake,diag}` = `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime`
++ pip-installed extras). Model = `Lightricks/LTX-2` via
+`diffusers.LTX2Pipeline` in bf16, VAE tiling enabled. Endpoints are
+RunPod Queue type (the REST API does not expose the LB toggle);
+cold-start wall is measured via RunPod's `delayTime` field on
+`/runsync` responses.
 
 Four `MODEL_SOURCE` variants exercised:
 - `bake`  — weights baked into the image at `/opt/models/ltx-2`,
@@ -20,9 +24,10 @@ Four `MODEL_SOURCE` variants exercised:
 - `volume` — self-seeded network volume at `/runpod-volume/ltx-2`.
 
 All server-side timestamps come from JSON `[TIMING]` lines emitted by
-`mark()` in `app.py`, captured from `/info`, `/warmup`, `/generate`
-response bodies (RunPod does not expose `fal runners logs`-style
-streaming setup() output on LB endpoints; see §8).
+`mark()` in `app.py`, returned in the handler response bodies for
+`op=info`, `op=warmup`, `op=generate`. RunPod does not expose
+`fal runners logs`-style streaming setup() output before the first
+handler call completes; see §8.
 
 Executive summary (to be filled in after Phase 3):
 - **TBM** – comparative cold-start story between bake/live/cache/volume.

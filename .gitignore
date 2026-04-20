@@ -1,0 +1,9 @@
+results/
+ltx2-weights/
+*.mp4
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+diag-build.log
+live-build.log
