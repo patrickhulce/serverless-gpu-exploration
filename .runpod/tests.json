@@ -1,9 +1,9 @@
 {
   "tests": [
     {
-      "name": "diag_probe",
-      "input": {"op": "probe"},
-      "timeout": 600000
+      "name": "handler_info",
+      "input": {"op": "info"},
+      "timeout": 60000
     }
   ],
   "config": {

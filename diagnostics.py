@@ -459,7 +459,19 @@ def _op_gpu(job_input: dict[str, Any]) -> dict[str, Any]:
     return _gpu_benchmark(job_input)
 
 
+def _op_info(_: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "role": "diagnostics",
+        "server_t": time.time(),
+        "ready": DIAG.ready,
+        "setup_id": DIAG.setup_id,
+        "pid": os.getpid(),
+        "hostname": _safe(socket.gethostname),
+    }
+
+
 _OPS = {
+    "info": _op_info,
     "probe": _op_probe,
     "gpu": _op_gpu,
 }
