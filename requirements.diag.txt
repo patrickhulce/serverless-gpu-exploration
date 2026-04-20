@@ -1,0 +1,3 @@
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.5.1
+runpod>=1.7,<2.0

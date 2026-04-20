@@ -1,0 +1,50 @@
+# LTX-2 image with the --pipeline-only weight set baked into the image
+# at /opt/models/ltx-2. Cold-start wall should be pure (image pull +
+# torch import + to(cuda)), no HF download, no volume read. Image is
+# ~95 GB so container disk must be raised to >=100 GB on the endpoint.
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 \
+      python3-pip \
+      git \
+      ffmpeg \
+      curl \
+      ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt /tmp/requirements.txt
+RUN python3 -m pip install --upgrade pip \
+ && python3 -m pip install -r /tmp/requirements.txt
+
+ARG LTX2_REPO=Lightricks/LTX-2
+RUN --mount=type=secret,id=HF_TOKEN \
+    HF_TOKEN=$(cat /run/secrets/HF_TOKEN 2>/dev/null || echo "") && \
+    if [ -n "$HF_TOKEN" ]; then export HF_TOKEN; fi && \
+    python3 -c "import os; from huggingface_hub import snapshot_download; \
+      snapshot_download( \
+        repo_id='${LTX2_REPO}', \
+        local_dir='/opt/models/ltx-2', \
+        max_workers=16, \
+        allow_patterns=[ \
+          'model_index.json','*.json','LICENSE','README.md', \
+          'scheduler/*','tokenizer/*','text_encoder/*', \
+          'transformer/*','vae/*','audio_vae/*', \
+          'connectors/*','vocoder/*', \
+        ], \
+      )"
+
+COPY app.py /app/app.py
+
+ENV MODEL_SOURCE=bake \
+    MODEL_PATH=/opt/models/ltx-2 \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
+CMD ["python3", "-u", "app.py"]
