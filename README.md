@@ -13,8 +13,9 @@ Serverless queue endpoints. The benchmark harness in
 | ---- | ---------- |
 | `app.py` | RunPod handler for the LTX-2 workload. Exposes `op=info \| warmup \| generate`. Picks the storage variant at startup via `MODEL_SOURCE` / `MODEL_PATH` env. |
 | `diagnostics.py` | RunPod handler for Phase 1/2 probing. Exposes `op=probe \| gpu`. Stamps marker files to 8 candidate paths + runs a cuBLAS/HBM/PCIe/SDPA/Conv3D microbench. |
-| `Dockerfile.diag` | Tiny cu124 + torch + runpod-sdk image for diagnostics. Base: `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime`. |
-| `Dockerfile.live` | LTX-2 image without weights. Used for the `live`, `cache`, `volume` variants; the variant is picked at runtime from endpoint env. |
+| `handler.py` | Entry point dispatcher. Imports `app.handler` (default) or `diagnostics.handler` based on `WORKER_ROLE` env. RunPod Hub's validator needs this file at the repo root, literally named `handler.py`. |
+| `Dockerfile` | Default (root-level) LTX-2 image without weights. Required by Hub's validator. Used for the `live`, `cache`, `volume` variants; variant is picked at runtime via `MODEL_SOURCE` / `MODEL_PATH` env. |
+| `Dockerfile.diag` | Tiny cu124 + torch + runpod-sdk image for diagnostics. Base: `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime`. Sets `WORKER_ROLE=diag`. |
 | `Dockerfile.bake` | LTX-2 image with the `--pipeline-only` weight set baked to `/opt/models/ltx-2`. Image is ~45 GB (under RunPod Hub's 80 GB cap). |
 | `benchmark.py` | Client-side harness. Covers `deploy \| run \| iteration \| coldstart \| compute \| invocation \| all`. Uses RunPod's REST API for scale-to-zero + worker polling, and `POST /v2/<eid>/runsync` for job submission. |
 | `drive_diagnostics.sh` | Guaranteed cold-start driver: scales the diag endpoint to 0 → waits for workers to drain → scales to 1 → fires one `op=probe` (or `op=gpu`) via `/runsync`. Repeat N times to collect hostname/boot_id/GPU UUID across trials. |
@@ -37,9 +38,9 @@ Serverless queue endpoints. The benchmark harness in
 ## The four LTX-2 storage variants
 
 1. **bake** — `Dockerfile.bake` copies the pipeline-only weight set into `/opt/models/ltx-2` at build time. Cold start = image pull + torch import + `to(cuda)`, with zero HF/volume I/O.
-2. **live** — `Dockerfile.live` + `MODEL_SOURCE=live MODEL_PATH=Lightricks/LTX-2`. Weights fetched from HF on every cold start; worst-case baseline.
-3. **cache** — `Dockerfile.live` + `MODEL_SOURCE=cache` + RunPod Endpoint's "Cached Model" config set to `Lightricks/LTX-2`. Worker gets scheduled on a host that has the HF cache pre-staged at `/runpod-volume/huggingface-cache/hub/`. §10 of `FINDINGS.md` dissects whether this actually works.
-4. **volume** — `Dockerfile.live` + `MODEL_SOURCE=volume MODEL_PATH=/runpod-volume/ltx-2` + a 200 GB Network Volume attached at `/runpod-volume/`. `seed_volume.py` populates the volume out-of-band.
+2. **live** — root `Dockerfile` + `MODEL_SOURCE=live MODEL_PATH=Lightricks/LTX-2`. Weights fetched from HF on every cold start; worst-case baseline.
+3. **cache** — root `Dockerfile` + `MODEL_SOURCE=cache` + RunPod Endpoint's "Cached Model" config set to `Lightricks/LTX-2`. Worker gets scheduled on a host that has the HF cache pre-staged at `/runpod-volume/huggingface-cache/hub/`. §10 of `FINDINGS.md` dissects whether this actually works.
+4. **volume** — root `Dockerfile` + `MODEL_SOURCE=volume MODEL_PATH=/runpod-volume/ltx-2` + a 200 GB Network Volume attached at `/runpod-volume/`. `seed_volume.py` populates the volume out-of-band.
 
 ## One-time setup (manual, in the RunPod console)
 
@@ -59,11 +60,11 @@ expose GitHub integration or the "Cached Model" field.
 
    | Endpoint name | Dockerfile Path | Container disk | Env | Network volume | Cached Model |
    | ------------- | --------------- | -------------- | --- | -------------- | ------------ |
-   | `ltx2-eval-diag` | `Dockerfile.diag` | 20 GB | (none) | — | — |
+   | `ltx2-eval-diag` | `Dockerfile.diag` | 20 GB | `WORKER_ROLE=diag` | — | — |
    | `ltx2-bake` | `Dockerfile.bake` | 60 GB | `MODEL_SOURCE=bake, MODEL_PATH=/opt/models/ltx-2` | — | — |
-   | `ltx2-live` | `Dockerfile.live` | 40 GB | `MODEL_SOURCE=live, MODEL_PATH=Lightricks/LTX-2, HF_TOKEN=…` | — | — |
-   | `ltx2-cache` | `Dockerfile.live` | 40 GB | `MODEL_SOURCE=cache, MODEL_PATH=auto` | — | `Lightricks/LTX-2` |
-   | `ltx2-volume` | `Dockerfile.live` | 40 GB | `MODEL_SOURCE=volume, MODEL_PATH=/runpod-volume/ltx-2` | `ltx2-eval-vol` (200 GB, EU-RO-1) | — |
+   | `ltx2-live` | `Dockerfile` (default) | 40 GB | `MODEL_SOURCE=live, MODEL_PATH=Lightricks/LTX-2, HF_TOKEN=…` | — | — |
+   | `ltx2-cache` | `Dockerfile` (default) | 40 GB | `MODEL_SOURCE=cache, MODEL_PATH=auto` | — | `Lightricks/LTX-2` |
+   | `ltx2-volume` | `Dockerfile` (default) | 40 GB | `MODEL_SOURCE=volume, MODEL_PATH=/runpod-volume/ltx-2` | `ltx2-eval-vol` (200 GB, EU-RO-1) | — |
 
    Common settings on every endpoint:
    - Workers: Min 0, Max 1

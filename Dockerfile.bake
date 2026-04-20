@@ -42,10 +42,11 @@ RUN --mount=type=secret,id=HF_TOKEN \
 
 WORKDIR /app
 COPY app.py /app/app.py
+COPY handler.py /app/handler.py
 
 ENV MODEL_SOURCE=bake \
     MODEL_PATH=/opt/models/ltx-2 \
     HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1
 
-CMD ["python", "-u", "app.py"]
+CMD ["python", "-u", "handler.py"]

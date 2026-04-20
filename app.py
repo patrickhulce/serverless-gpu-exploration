@@ -375,6 +375,8 @@ def handler(event: dict[str, Any]) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
+    # Running app.py directly also works (e.g. local smoke tests); the
+    # real container entrypoint is handler.py.
     import runpod
 
     runpod.serverless.start({"handler": handler})

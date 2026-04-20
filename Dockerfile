@@ -1,7 +1,9 @@
-# LTX-2 image (no weights). Uses the official pytorch/pytorch image as
-# base so torch 2.5.1+cu124 is pre-installed. Used for the live,
-# cache, and volume variants; the variant is picked at runtime via
-# MODEL_SOURCE / MODEL_PATH env on the endpoint.
+# Default Dockerfile — identical to Dockerfile.live. RunPod's Hub
+# validator expects a file literally named `Dockerfile` at the repo
+# root. For the 4 LTX-2 variants this same base image is used; the
+# storage strategy is picked at runtime via MODEL_SOURCE / MODEL_PATH
+# env. The bake variant has its own Dockerfile.bake; diagnostics has
+# Dockerfile.diag.
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -26,8 +28,9 @@ RUN pip install --no-cache-dir \
 
 WORKDIR /app
 COPY app.py /app/app.py
+COPY handler.py /app/handler.py
 
 ENV MODEL_SOURCE=live \
     MODEL_PATH=Lightricks/LTX-2
 
-CMD ["python", "-u", "app.py"]
+CMD ["python", "-u", "handler.py"]

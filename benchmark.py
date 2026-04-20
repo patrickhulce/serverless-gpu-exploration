@@ -325,7 +325,7 @@ def _bump_requirement() -> Edit:
 
 
 def _bump_dockerfile() -> Edit:
-    path = HERE / "Dockerfile.live"
+    path = HERE / "Dockerfile"
     original = path.read_text()
 
     def apply() -> None:
